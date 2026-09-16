@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>RAG PDF Upload</title>
+  <style>
+    body { font-family: Arial; max-width: 500px; margin: 50px auto; padding: 20px; }
+    h1 { color: #333; }
+    input, button { padding: 10px; margin: 10px 0; width: 100%; }
+    button { background: #6366f1; color: white; border: none; cursor: pointer; border-radius: 5px; }
+    #result { margin-top: 20px; padding: 15px; background: #f4f4f4; border-radius: 5px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>📄 PDF Upload Test</h1>
+  <input type="file" id="pdfFile" accept=".pdf" />
+  <button onclick="uploadPDF()">Upload & Extract Text</button>
+  <div id="result"></div>
+
+  <script>
+    async function uploadPDF() {
+      const fileInput = document.getElementById('pdfFile');
+      const resultDiv = document.getElementById('result');
+
+      if (!fileInput.files[0]) {
+        resultDiv.innerText = 'Pehle ek PDF select karo!';
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('pdf', fileInput.files[0]);
+
+      resultDiv.innerText = 'Upload ho raha hai...';
+
+      const response = await fetch('/upload', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await response.json();
+      resultDiv.innerText = JSON.stringify(data, null, 2);
+    }
+  </script>
+</body>
+</html>

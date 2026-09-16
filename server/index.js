@@ -5,6 +5,7 @@ const pdfParse = require('pdf-parse');
 
 const app = express();
 app.use(express.json());
+app.use(express.static('public'));
 
 // Multer setup — batata hai file kahan save karni hai
 const upload = multer({ dest: 'uploads/' });
