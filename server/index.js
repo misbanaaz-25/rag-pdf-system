@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
 const pdfParse = require('pdf-parse');
+const { chunkText } = require('./ingest/chunker');
 
 const app = express();
 app.use(express.json());
@@ -15,24 +16,24 @@ app.get('/', (req, res) => {
   res.send('RAG server is running! 🚀');
 });
 
-// PDF upload route
 app.post('/upload', upload.single('pdf'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'Koi file nahi mili!' });
     }
 
-    // File ko read karo
     const fileBuffer = fs.readFileSync(req.file.path);
-
-    // PDF se text nikalo
     const data = await pdfParse(fileBuffer);
 
+    // Text ko chunks mein todo
+    const chunks = chunkText(data.text);
+
     res.json({
-      message: 'PDF successfully padhi gayi!',
+      message: 'PDF successfully padhi gayi aur chunks bhi ban gaye!',
       filename: req.file.originalname,
       totalPages: data.numpages,
-      textPreview: data.text.substring(0, 500) // pehle 500 characters
+      totalChunks: chunks.length,
+      firstChunkPreview: chunks[0]
     });
 
   } catch (error) {
