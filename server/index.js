@@ -3,6 +3,8 @@ const multer = require('multer');
 const fs = require('fs');
 const pdfParse = require('pdf-parse');
 const { chunkText } = require('./ingest/chunker');
+const { getEmbeddings } = require('./ingest/embedder');
+
 
 const app = express();
 app.use(express.json());
@@ -28,12 +30,16 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
     // Text ko chunks mein todo
     const chunks = chunkText(data.text);
 
+    // Chunks ko embeddings mein convert karo
+    const embeddings = await getEmbeddings(chunks);
+
     res.json({
-      message: 'PDF successfully padhi gayi aur chunks bhi ban gaye!',
+      message: 'PDF processed: chunked & embedded!',
       filename: req.file.originalname,
       totalPages: data.numpages,
       totalChunks: chunks.length,
-      firstChunkPreview: chunks[0]
+      totalEmbeddings: embeddings.length,
+      firstEmbeddingLength: embeddings[0].length  // kitne numbers hain ek embedding mein
     });
 
   } catch (error) {
