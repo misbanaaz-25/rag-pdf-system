@@ -7,7 +7,7 @@
     h1 { color: #333; }
     input, button { padding: 10px; margin: 10px 0; width: 100%; }
     button { background: #6366f1; color: white; border: none; cursor: pointer; border-radius: 5px; }
-    #result { margin-top: 20px; padding: 15px; background: #f4f4f4; border-radius: 5px; white-space: pre-wrap; }
+    #result, #searchResult { margin-top: 20px; padding: 15px; background: #f4f4f4; border-radius: 5px; white-space: pre-wrap; }
   </style>
 </head>
 <body>
@@ -15,6 +15,13 @@
   <input type="file" id="pdfFile" accept=".pdf" />
   <button onclick="uploadPDF()">Upload & Extract Text</button>
   <div id="result"></div>
+
+  <hr style="margin: 40px 0;">
+
+  <h1>🔍 Search Test</h1>
+  <input type="text" id="searchQuery" placeholder="Apna sawaal likho..." />
+  <button onclick="searchDocs()">Search</button>
+  <div id="searchResult"></div>
 
   <script>
     async function uploadPDF() {
@@ -34,6 +41,22 @@
       const response = await fetch('/upload', {
         method: 'POST',
         body: formData
+      });
+
+      const data = await response.json();
+      resultDiv.innerText = JSON.stringify(data, null, 2);
+    }
+
+    async function searchDocs() {
+      const query = document.getElementById('searchQuery').value;
+      const resultDiv = document.getElementById('searchResult');
+
+      resultDiv.innerText = 'Search ho raha hai...';
+
+      const response = await fetch('/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
       });
 
       const data = await response.json();
