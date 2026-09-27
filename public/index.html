@@ -1,67 +1,479 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>RAG PDF Upload</title>
-  <style>
-    body { font-family: Arial; max-width: 500px; margin: 50px auto; padding: 20px; }
-    h1 { color: #333; }
-    input, button { padding: 10px; margin: 10px 0; width: 100%; }
-    button { background: #6366f1; color: white; border: none; cursor: pointer; border-radius: 5px; }
-    #result, #searchResult { margin-top: 20px; padding: 15px; background: #f4f4f4; border-radius: 5px; white-space: pre-wrap; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DocMind — Ask your PDFs</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    --ink: #1b1d22;
+    --paper: #f6f4ef;
+    --panel: #ffffff;
+    --line: #e4e0d6;
+    --accent: #3d5a80;
+    --accent-soft: #e8edf3;
+    --muted: #6b6f76;
+    --good: #2e7d55;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    height: 100vh;
+    display: flex;
+  }
+
+  .sidebar {
+    width: 320px;
+    flex-shrink: 0;
+    background: var(--panel);
+    border-right: 1px solid var(--line);
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .brand {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .brand span { color: var(--accent); }
+
+  .tagline {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: -16px;
+    line-height: 1.5;
+  }
+
+  .upload-box {
+    border: 1.5px dashed var(--line);
+    border-radius: 10px;
+    padding: 20px 16px;
+    text-align: center;
+    transition: border-color 0.15s ease;
+  }
+
+  .upload-box.drag { border-color: var(--accent); background: var(--accent-soft); }
+
+  .upload-box input[type="file"] { display: none; }
+
+  .upload-label {
+    display: block;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .upload-label strong { color: var(--ink); display: block; margin-bottom: 4px; font-size: 14px; }
+
+  button.primary {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 11px 16px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.15s ease;
+  }
+
+  button.primary:hover { background: var(--accent); }
+  button.primary:disabled { background: #cfcbc0; cursor: not-allowed; }
+
+  .status-line {
+    font-size: 12.5px;
+    color: var(--muted);
+    min-height: 18px;
+  }
+
+  .status-line.ok { color: var(--good); }
+
+  .doc-list {
+    margin-top: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: auto;
+  }
+
+  .doc-item {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 13px;
+    padding: 8px 10px;
+    background: var(--paper);
+    border-radius: 7px;
+    border: 1px solid var(--line);
+  }
+
+  .doc-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--good); flex-shrink: 0; }
+
+  .doc-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .sidebar-foot {
+    margin-top: auto;
+    font-size: 11.5px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .chat-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  .chat-header {
+    padding: 22px 40px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .chat-header h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 20px;
+    margin: 0;
+  }
+
+  .chat-header p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
+
+  .messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 32px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+  }
+
+  .empty-state {
+    margin: auto;
+    text-align: center;
+    max-width: 380px;
+    color: var(--muted);
+  }
+
+  .empty-state .glyph {
+    font-family: 'Fraunces', serif;
+    font-size: 40px;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+
+  .empty-state h2 {
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    color: var(--ink);
+    margin: 0 0 6px;
+    font-weight: 600;
+  }
+
+  .empty-state p { font-size: 13px; line-height: 1.6; margin: 0; }
+
+  .msg { display: flex; flex-direction: column; max-width: 70%; }
+
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.bot { align-self: flex-start; align-items: flex-start; }
+
+  .bubble {
+    padding: 13px 16px;
+    border-radius: 12px;
+    font-size: 14.5px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+
+  .msg.user .bubble { background: var(--ink); color: var(--paper); border-bottom-right-radius: 3px; }
+  .msg.bot .bubble { background: var(--panel); border: 1px solid var(--line); border-bottom-left-radius: 3px; }
+
+  .sources {
+    margin-top: 7px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .source-chip {
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 3px 9px;
+    border-radius: 100px;
+  }
+
+  .typing { display: flex; gap: 4px; padding: 4px 2px; }
+  .typing span {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--muted);
+    animation: bounce 1.2s infinite ease-in-out;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.15s; }
+  .typing span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+  .composer {
+    padding: 20px 40px 26px;
+    border-top: 1px solid var(--line);
+  }
+
+  .composer-inner {
+    display: flex;
+    gap: 10px;
+    background: var(--panel);
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 6px 6px 6px 16px;
+    align-items: center;
+  }
+
+  .composer-inner:focus-within { border-color: var(--accent); }
+
+  .composer input {
+    border: none;
+    outline: none;
+    flex: 1;
+    font-family: 'Inter', sans-serif;
+    font-size: 14.5px;
+    padding: 10px 0;
+    background: transparent;
+  }
+
+  .send-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s ease;
+  }
+
+  .send-btn:hover { background: #2f4763; }
+  .send-btn:disabled { background: #cfcbc0; cursor: not-allowed; }
+
+  .composer-hint { font-size: 11.5px; color: var(--muted); margin-top: 8px; text-align: center; }
+</style>
 </head>
 <body>
-  <h1>📄 PDF Upload Test</h1>
-  <input type="file" id="pdfFile" accept=".pdf" />
-  <button onclick="uploadPDF()">Upload & Extract Text</button>
-  <div id="result"></div>
 
-  <hr style="margin: 40px 0;">
+  <aside class="sidebar">
+    <div>
+      <div class="brand">Doc<span>Mind</span></div>
+      <p class="tagline">Upload a PDF, then ask it anything.</p>
+    </div>
 
-  <h1>🔍 Search Test</h1>
-  <input type="text" id="searchQuery" placeholder="Apna sawaal likho..." />
-  <button onclick="searchDocs()">Search</button>
-  <div id="searchResult"></div>
+    <div class="upload-box" id="dropZone">
+      <label class="upload-label" for="pdfFile">
+        <strong>Drop a PDF here</strong>
+        or click to browse
+      </label>
+      <input type="file" id="pdfFile" accept=".pdf" />
+    </div>
 
-  <script>
-    async function uploadPDF() {
-      const fileInput = document.getElementById('pdfFile');
-      const resultDiv = document.getElementById('result');
+    <button class="primary" id="uploadBtn">Upload &amp; index</button>
+    <div class="status-line" id="uploadStatus"></div>
 
-      if (!fileInput.files[0]) {
-        resultDiv.innerText = 'Pehle ek PDF select karo!';
-        return;
-      }
+    <div class="doc-list" id="docList"></div>
 
-      const formData = new FormData();
-      formData.append('pdf', fileInput.files[0]);
+    <div class="sidebar-foot">
+      Built with Node.js, Voyage embeddings &amp; retrieval-augmented generation.
+    </div>
+  </aside>
 
-      resultDiv.innerText = 'Upload ho raha hai...';
+  <main class="chat-area">
+    <div class="chat-header">
+      <h1>Ask your documents</h1>
+      <p>Answers are grounded in the PDFs you've uploaded.</p>
+    </div>
 
-      const response = await fetch('/upload', {
-        method: 'POST',
-        body: formData
-      });
+    <div class="messages" id="messages">
+      <div class="empty-state" id="emptyState">
+        <div class="glyph">" "</div>
+        <h2>Nothing uploaded yet</h2>
+        <p>Add a PDF on the left, then ask a question about it here.</p>
+      </div>
+    </div>
 
-      const data = await response.json();
-      resultDiv.innerText = JSON.stringify(data, null, 2);
+    <div class="composer">
+      <div class="composer-inner">
+        <input type="text" id="chatInput" placeholder="Ask something about your document…" />
+        <button class="send-btn" id="sendBtn" aria-label="Send">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 12L20 4L14 20L11 13L4 12Z" stroke="white" stroke-width="2" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="composer-hint">Press Enter to send</div>
+    </div>
+  </main>
+
+<script>
+  const pdfFile = document.getElementById('pdfFile');
+  const dropZone = document.getElementById('dropZone');
+  const uploadBtn = document.getElementById('uploadBtn');
+  const uploadStatus = document.getElementById('uploadStatus');
+  const docList = document.getElementById('docList');
+  const messages = document.getElementById('messages');
+  const emptyState = document.getElementById('emptyState');
+  const chatInput = document.getElementById('chatInput');
+  const sendBtn = document.getElementById('sendBtn');
+
+  let selectedFile = null;
+
+  pdfFile.addEventListener('change', () => {
+    selectedFile = pdfFile.files[0] || null;
+    if (selectedFile) {
+      dropZone.querySelector('.upload-label strong').textContent = selectedFile.name;
+    }
+  });
+
+  ['dragover', 'dragleave', 'drop'].forEach(evt => {
+    dropZone.addEventListener(evt, e => e.preventDefault());
+  });
+  dropZone.addEventListener('dragover', () => dropZone.classList.add('drag'));
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+  dropZone.addEventListener('drop', e => {
+    dropZone.classList.remove('drag');
+    if (e.dataTransfer.files[0]) {
+      selectedFile = e.dataTransfer.files[0];
+      pdfFile.files = e.dataTransfer.files;
+      dropZone.querySelector('.upload-label strong').textContent = selectedFile.name;
+    }
+  });
+
+  uploadBtn.addEventListener('click', async () => {
+    if (!selectedFile) {
+      uploadStatus.textContent = 'Choose a PDF first.';
+      uploadStatus.className = 'status-line';
+      return;
     }
 
-    async function searchDocs() {
-      const query = document.getElementById('searchQuery').value;
-      const resultDiv = document.getElementById('searchResult');
+    uploadBtn.disabled = true;
+    uploadStatus.textContent = 'Reading, chunking & embedding…';
+    uploadStatus.className = 'status-line';
 
-      resultDiv.innerText = 'Search ho raha hai...';
+    const formData = new FormData();
+    formData.append('pdf', selectedFile);
 
-      const response = await fetch('/search', {
+    try {
+      const res = await fetch('/upload', { method: 'POST', body: formData });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
+
+      uploadStatus.textContent = `Indexed ${data.totalChunks} chunk${data.totalChunks === 1 ? '' : 's'}.`;
+      uploadStatus.className = 'status-line ok';
+
+      const item = document.createElement('div');
+      item.className = 'doc-item';
+      item.innerHTML = `<div class="doc-dot"></div><span>${data.filename}</span>`;
+      docList.prepend(item);
+
+      selectedFile = null;
+      pdfFile.value = '';
+      dropZone.querySelector('.upload-label strong').textContent = 'Drop a PDF here';
+    } catch (err) {
+      uploadStatus.textContent = 'Something went wrong — try again.';
+      uploadStatus.className = 'status-line';
+    } finally {
+      uploadBtn.disabled = false;
+    }
+  });
+
+  function addMessage(role, text, sources) {
+    if (emptyState) emptyState.remove();
+
+    const msg = document.createElement('div');
+    msg.className = `msg ${role}`;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = text;
+    msg.appendChild(bubble);
+
+    if (sources && sources.length) {
+      const src = document.createElement('div');
+      src.className = 'sources';
+      sources.forEach(s => {
+        const chip = document.createElement('div');
+        chip.className = 'source-chip';
+        chip.textContent = `${s.filename} · ${(s.score * 100).toFixed(0)}%`;
+        src.appendChild(chip);
+      });
+      msg.appendChild(src);
+    }
+
+    messages.appendChild(msg);
+    messages.scrollTop = messages.scrollHeight;
+    return msg;
+  }
+
+  function addTyping() {
+    const msg = document.createElement('div');
+    msg.className = 'msg bot';
+    msg.id = 'typingMsg';
+    msg.innerHTML = `<div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+    messages.appendChild(msg);
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function removeTyping() {
+    const t = document.getElementById('typingMsg');
+    if (t) t.remove();
+  }
+
+  async function sendMessage() {
+    const query = chatInput.value.trim();
+    if (!query) return;
+
+    addMessage('user', query);
+    chatInput.value = '';
+    sendBtn.disabled = true;
+    addTyping();
+
+    try {
+      const res = await fetch('/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query })
       });
+      const data = await res.json();
+      removeTyping();
 
-      const data = await response.json();
-      resultDiv.innerText = JSON.stringify(data, null, 2);
+      if (!res.ok) throw new Error(data.error || 'Something went wrong');
+
+      addMessage('bot', data.answer, data.sources);
+    } catch (err) {
+      removeTyping();
+      addMessage('bot', 'Something went wrong — please try again.');
+    } finally {
+      sendBtn.disabled = false;
     }
-  </script>
+  }
+
+  sendBtn.addEventListener('click', sendMessage);
+  chatInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') sendMessage();
+  });
+</script>
 </body>
 </html>

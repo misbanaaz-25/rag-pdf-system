@@ -6,6 +6,7 @@ const { chunkText } = require('./ingest/chunker');
 const { getEmbeddings } = require('./ingest/embedder');
 const { addToStore } = require('./ingest/store');
 const { searchSimilarChunks } = require('./ingest/search');
+const { generateAnswer } = require('./ingest/generate');
 
 const app = express();
 app.use(express.json());
@@ -45,7 +46,6 @@ app.post('/upload', upload.single('pdf'), async (req, res) => {
   }
 });
 
-// 👇 YE NAYA ROUTE ADD KARNA HAI YAHAN 👇
 app.post('/search', async (req, res) => {
   try {
     const { query } = req.body;
@@ -70,7 +70,29 @@ app.post('/search', async (req, res) => {
     res.status(500).json({ error: 'Kuch gadbad ho gayi' });
   }
 });
-// 👆 YAHAN TAK 👆
+
+app.post('/chat', async (req, res) => {
+  try {
+    const { query } = req.body;
+
+    if (!query) {
+      return res.status(400).json({ error: 'Sawaal (query) nahi mila!' });
+    }
+
+    const relevantChunks = await searchSimilarChunks(query);
+    const answer = await generateAnswer(query, relevantChunks);
+
+    res.json({
+      query,
+      answer,
+      sources: relevantChunks.map(c => ({ filename: c.filename, score: c.score }))
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Kuch gadbad ho gayi' });
+  }
+});
 
 const PORT = 3000;
 app.listen(PORT, () => {
