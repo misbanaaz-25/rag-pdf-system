@@ -16,6 +16,7 @@
     --accent-soft: #e8edf3;
     --muted: #6b6f76;
     --good: #2e7d55;
+    --bad: #b3402f;
   }
 
   * { box-sizing: border-box; }
@@ -38,7 +39,8 @@
     padding: 28px 24px;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 20px;
+    min-height: 0;
   }
 
   .brand {
@@ -66,7 +68,6 @@
   }
 
   .upload-box.drag { border-color: var(--accent); background: var(--accent-soft); }
-
   .upload-box input[type="file"] { display: none; }
 
   .upload-label {
@@ -76,7 +77,15 @@
     color: var(--muted);
   }
 
-  .upload-label strong { color: var(--ink); display: block; margin-bottom: 4px; font-size: 14px; }
+  .upload-label strong {
+    color: var(--ink);
+    display: block;
+    margin-bottom: 4px;
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 
   button.primary {
     background: var(--ink);
@@ -95,36 +104,71 @@
   button.primary:hover { background: var(--accent); }
   button.primary:disabled { background: #cfcbc0; cursor: not-allowed; }
 
-  .status-line {
-    font-size: 12.5px;
-    color: var(--muted);
-    min-height: 18px;
-  }
-
+  .status-line { font-size: 12.5px; color: var(--muted); min-height: 18px; line-height: 1.5; }
   .status-line.ok { color: var(--good); }
+  .status-line.err { color: var(--bad); }
 
   .doc-list {
-    margin-top: 4px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     overflow-y: auto;
+    min-height: 0;
+  }
+
+  .doc-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 2px 0 4px;
   }
 
   .doc-item {
     display: flex;
     align-items: center;
-    gap: 9px;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+    font-family: 'Inter', sans-serif;
     font-size: 13px;
-    padding: 8px 10px;
+    color: var(--ink);
+    padding: 10px 12px;
     background: var(--paper);
-    border-radius: 7px;
+    border-radius: 8px;
     border: 1px solid var(--line);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
   }
 
-  .doc-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--good); flex-shrink: 0; }
+  .doc-item:hover { border-color: var(--accent); }
+  .doc-item.active { background: var(--accent-soft); border-color: var(--accent); font-weight: 500; }
+
+  .doc-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--line); flex-shrink: 0; }
+  .doc-item.active .doc-dot { background: var(--accent); }
 
   .doc-item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .doc-row { display: flex; align-items: center; gap: 6px; }
+
+  .doc-del {
+    flex-shrink: 0;
+    width: 34px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease;
+  }
+
+  .doc-del:hover { color: var(--bad); background: #f8e9e6; }
 
   .sidebar-foot {
     margin-top: auto;
@@ -139,6 +183,7 @@
     display: flex;
     flex-direction: column;
     height: 100vh;
+    min-width: 0;
   }
 
   .chat-header {
@@ -149,6 +194,20 @@
     justify-content: space-between;
     gap: 16px;
   }
+
+  .chat-header > div:first-child { min-width: 0; }
+
+  .chat-header h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 20px;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .chat-header p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
 
   .lang-switch {
     display: flex;
@@ -175,15 +234,6 @@
 
   .lang-btn:hover { color: var(--ink); }
   .lang-btn.active { background: var(--ink); color: var(--paper); }
-
-  .chat-header h1 {
-    font-family: 'Fraunces', serif;
-    font-weight: 600;
-    font-size: 20px;
-    margin: 0;
-  }
-
-  .chat-header p { margin: 4px 0 0; font-size: 13px; color: var(--muted); }
 
   .messages {
     flex: 1;
@@ -216,10 +266,9 @@
     font-weight: 600;
   }
 
-  .empty-state p { font-size: 13px; line-height: 1.6; margin: 0; }
+  .empty-state p { font-size: 13px; line-height: 1.6; margin: 0; word-break: break-word; }
 
   .msg { display: flex; flex-direction: column; max-width: 70%; }
-
   .msg.user { align-self: flex-end; align-items: flex-end; }
   .msg.bot { align-self: flex-start; align-items: flex-start; }
 
@@ -229,17 +278,13 @@
     font-size: 14.5px;
     line-height: 1.6;
     white-space: pre-wrap;
+    word-break: break-word;
   }
 
   .msg.user .bubble { background: var(--ink); color: var(--paper); border-bottom-right-radius: 3px; }
   .msg.bot .bubble { background: var(--panel); border: 1px solid var(--line); border-bottom-left-radius: 3px; }
 
-  .sources {
-    margin-top: 7px;
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
+  .sources { margin-top: 7px; display: flex; gap: 6px; flex-wrap: wrap; }
 
   .source-chip {
     font-size: 11px;
@@ -259,10 +304,7 @@
   .typing span:nth-child(3) { animation-delay: 0.3s; }
   @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-4px); opacity: 1; } }
 
-  .composer {
-    padding: 20px 40px 26px;
-    border-top: 1px solid var(--line);
-  }
+  .composer { padding: 20px 40px 26px; border-top: 1px solid var(--line); }
 
   .composer-inner {
     display: flex;
@@ -317,7 +359,7 @@
 
     <div class="upload-box" id="dropZone">
       <label class="upload-label" for="pdfFile">
-        <strong>Drop a PDF here</strong>
+        <strong id="dropTitle">Drop a PDF here</strong>
         or click to browse
       </label>
       <input type="file" id="pdfFile" accept=".pdf" />
@@ -336,8 +378,8 @@
   <main class="chat-area">
     <div class="chat-header">
       <div>
-        <h1>Ask your documents</h1>
-        <p>Answers are grounded in the PDFs you've uploaded.</p>
+        <h1 id="chatTitle">Ask your documents</h1>
+        <p id="chatSub">Upload a PDF to get started.</p>
       </div>
       <div class="lang-switch" id="langSwitch" role="group" aria-label="Answer language">
         <button class="lang-btn" data-lang="english">English</button>
@@ -346,13 +388,7 @@
       </div>
     </div>
 
-    <div class="messages" id="messages">
-      <div class="empty-state" id="emptyState">
-        <div class="glyph">“ ”</div>
-        <h2>Nothing uploaded yet</h2>
-        <p>Add a PDF on the left, then ask a question about it here.</p>
-      </div>
-    </div>
+    <div class="messages" id="messages"></div>
 
     <div class="composer">
       <div class="composer-inner">
@@ -368,17 +404,24 @@
 <script>
   const pdfFile = document.getElementById('pdfFile');
   const dropZone = document.getElementById('dropZone');
+  const dropTitle = document.getElementById('dropTitle');
   const uploadBtn = document.getElementById('uploadBtn');
   const uploadStatus = document.getElementById('uploadStatus');
   const docList = document.getElementById('docList');
-  const messages = document.getElementById('messages');
-  const emptyState = document.getElementById('emptyState');
+  const messagesEl = document.getElementById('messages');
   const chatInput = document.getElementById('chatInput');
   const sendBtn = document.getElementById('sendBtn');
+  const chatTitle = document.getElementById('chatTitle');
+  const chatSub = document.getElementById('chatSub');
 
-  let selectedFile = null;
+  let documents = [];          // names of PDFs stored on the server
+  let selected = null;         // the PDF we are chatting with
   let language = 'hinglish';
+  let selectedFile = null;     // file picked for upload
+  const histories = {};        // filename -> list of messages
+  const pending = new Set();   // filenames waiting for an answer
 
+  /* ---------- Language switch ---------- */
   document.querySelectorAll('.lang-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       language = btn.dataset.lang;
@@ -387,12 +430,198 @@
     });
   });
 
-  pdfFile.addEventListener('change', () => {
-    selectedFile = pdfFile.files[0] || null;
-    if (selectedFile) {
-      dropZone.querySelector('.upload-label strong').textContent = selectedFile.name;
+  /* ---------- Rendering ---------- */
+  function renderDocList() {
+    docList.innerHTML = '';
+    if (!documents.length) return;
+
+    const label = document.createElement('div');
+    label.className = 'doc-label';
+    label.textContent = 'Your documents';
+    docList.appendChild(label);
+
+    [...documents].reverse().forEach(name => {
+      const row = document.createElement('div');
+      row.className = 'doc-row';
+
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'doc-item' + (name === selected ? ' active' : '');
+      item.title = name;
+
+      const dot = document.createElement('div');
+      dot.className = 'doc-dot';
+      const text = document.createElement('span');
+      text.textContent = name;
+
+      item.appendChild(dot);
+      item.appendChild(text);
+      item.addEventListener('click', () => selectDocument(name));
+
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'doc-del';
+      del.title = 'Delete this document';
+      del.setAttribute('aria-label', 'Delete ' + name);
+      del.innerHTML = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6"/></svg>';
+      del.addEventListener('click', () => deleteDocument(name));
+
+      row.appendChild(item);
+      row.appendChild(del);
+      docList.appendChild(row);
+    });
+  }
+
+  function renderHeader() {
+    if (selected) {
+      chatTitle.textContent = selected;
+      chatSub.textContent = 'Answers come only from this PDF.';
+    } else if (documents.length) {
+      chatTitle.textContent = 'Select a document';
+      chatSub.textContent = 'Pick a PDF from the left to start chatting.';
+    } else {
+      chatTitle.textContent = 'Ask your documents';
+      chatSub.textContent = 'Upload a PDF to get started.';
     }
-  });
+  }
+
+  function renderComposer() {
+    const busy = selected && pending.has(selected);
+    chatInput.disabled = !selected;
+    sendBtn.disabled = !selected || busy;
+    chatInput.placeholder = selected
+      ? 'Ask something about this document…'
+      : 'Select a document first…';
+  }
+
+  function showEmpty(title, text) {
+    const box = document.createElement('div');
+    box.className = 'empty-state';
+
+    const glyph = document.createElement('div');
+    glyph.className = 'glyph';
+    glyph.textContent = '“ ”';
+    const h2 = document.createElement('h2');
+    h2.textContent = title;
+    const p = document.createElement('p');
+    p.textContent = text;
+
+    box.appendChild(glyph);
+    box.appendChild(h2);
+    box.appendChild(p);
+    messagesEl.appendChild(box);
+  }
+
+  function buildMessage(m) {
+    const msg = document.createElement('div');
+    msg.className = 'msg ' + m.role;
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = m.text;
+    msg.appendChild(bubble);
+
+    if (m.sources && m.sources.length) {
+      const src = document.createElement('div');
+      src.className = 'sources';
+      m.sources.forEach((s, i) => {
+        const chip = document.createElement('div');
+        chip.className = 'source-chip';
+        chip.textContent = 'Passage ' + (i + 1) + ' · ' + Math.round(s.score * 100) + '% match';
+        src.appendChild(chip);
+      });
+      msg.appendChild(src);
+    }
+    return msg;
+  }
+
+  function buildTyping() {
+    const msg = document.createElement('div');
+    msg.className = 'msg bot';
+    msg.innerHTML = '<div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
+    return msg;
+  }
+
+  function renderMessages() {
+    messagesEl.innerHTML = '';
+
+    if (!documents.length) {
+      showEmpty('Nothing uploaded yet', 'Add a PDF on the left, then ask a question about it here.');
+      return;
+    }
+    if (!selected) {
+      showEmpty('No document selected', 'Click a document on the left to chat with it.');
+      return;
+    }
+
+    const history = histories[selected] || [];
+    if (!history.length && !pending.has(selected)) {
+      showEmpty('Ask about this document', 'Ask anything about ' + selected + '.');
+      return;
+    }
+
+    history.forEach(m => messagesEl.appendChild(buildMessage(m)));
+    if (pending.has(selected)) messagesEl.appendChild(buildTyping());
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function renderAll() {
+    renderDocList();
+    renderHeader();
+    renderComposer();
+    renderMessages();
+  }
+
+  function selectDocument(name) {
+    selected = name;
+    renderAll();
+    chatInput.focus();
+  }
+
+  /* ---------- Load documents from server ---------- */
+  async function loadDocuments(selectName) {
+    try {
+      const res = await fetch('/documents');
+      const data = await res.json();
+      documents = data.documents || [];
+    } catch (err) {
+      documents = [];
+    }
+
+    if (selectName && documents.includes(selectName)) {
+      selected = selectName;
+    } else if (!selected || !documents.includes(selected)) {
+      selected = documents.length ? documents[documents.length - 1] : null;
+    }
+    renderAll();
+  }
+
+  /* ---------- Delete ---------- */
+  async function deleteDocument(name) {
+    if (!confirm('Delete "' + name + '" and its chat? This cannot be undone.')) return;
+
+    try {
+      const res = await fetch('/documents/' + encodeURIComponent(name), { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Delete failed');
+
+      delete histories[name];
+      uploadStatus.textContent = 'Deleted ' + name + '.';
+      uploadStatus.className = 'status-line ok';
+      await loadDocuments();
+    } catch (err) {
+      uploadStatus.textContent = err.message;
+      uploadStatus.className = 'status-line err';
+    }
+  }
+
+  /* ---------- Upload ---------- */
+  function setPickedFile(file) {
+    selectedFile = file || null;
+    dropTitle.textContent = file ? file.name : 'Drop a PDF here';
+  }
+
+  pdfFile.addEventListener('change', () => setPickedFile(pdfFile.files[0]));
 
   ['dragover', 'dragleave', 'drop'].forEach(evt => {
     dropZone.addEventListener(evt, e => e.preventDefault());
@@ -402,9 +631,8 @@
   dropZone.addEventListener('drop', e => {
     dropZone.classList.remove('drag');
     if (e.dataTransfer.files[0]) {
-      selectedFile = e.dataTransfer.files[0];
       pdfFile.files = e.dataTransfer.files;
-      dropZone.querySelector('.upload-label strong').textContent = selectedFile.name;
+      setPickedFile(e.dataTransfer.files[0]);
     }
   });
 
@@ -428,93 +656,57 @@
 
       if (!res.ok) throw new Error(data.error || 'Upload failed');
 
-      uploadStatus.textContent = `Indexed ${data.totalChunks} chunk${data.totalChunks === 1 ? '' : 's'}.`;
+      uploadStatus.textContent = 'Indexed ' + data.totalChunks + ' chunk' + (data.totalChunks === 1 ? '' : 's') + '.';
       uploadStatus.className = 'status-line ok';
 
-      const item = document.createElement('div');
-      item.className = 'doc-item';
-      item.innerHTML = `<div class="doc-dot"></div><span>${data.filename}</span>`;
-      docList.prepend(item);
-
-      selectedFile = null;
+      delete histories[data.filename];   // fresh chat for a re-uploaded file
+      setPickedFile(null);
       pdfFile.value = '';
-      dropZone.querySelector('.upload-label strong').textContent = 'Drop a PDF here';
+      await loadDocuments(data.filename);
     } catch (err) {
-      uploadStatus.textContent = 'Something went wrong — try again.';
-      uploadStatus.className = 'status-line';
+      uploadStatus.textContent = err.message;
+      uploadStatus.className = 'status-line err';
     } finally {
       uploadBtn.disabled = false;
     }
   });
 
-  function addMessage(role, text, sources) {
-    if (emptyState) emptyState.remove();
-
-    const msg = document.createElement('div');
-    msg.className = `msg ${role}`;
-
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble';
-    bubble.textContent = text;
-    msg.appendChild(bubble);
-
-    if (sources && sources.length) {
-      const src = document.createElement('div');
-      src.className = 'sources';
-      sources.forEach(s => {
-        const chip = document.createElement('div');
-        chip.className = 'source-chip';
-        chip.textContent = `${s.filename} · ${(s.score * 100).toFixed(0)}%`;
-        src.appendChild(chip);
-      });
-      msg.appendChild(src);
-    }
-
-    messages.appendChild(msg);
-    messages.scrollTop = messages.scrollHeight;
-    return msg;
-  }
-
-  function addTyping() {
-    const msg = document.createElement('div');
-    msg.className = 'msg bot';
-    msg.id = 'typingMsg';
-    msg.innerHTML = `<div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
-    messages.appendChild(msg);
-    messages.scrollTop = messages.scrollHeight;
-  }
-
-  function removeTyping() {
-    const t = document.getElementById('typingMsg');
-    if (t) t.remove();
+  /* ---------- Chat ---------- */
+  function addToHistory(name, message) {
+    if (!documents.includes(name)) return;   // document was deleted meanwhile
+    if (!histories[name]) histories[name] = [];
+    histories[name].push(message);
   }
 
   async function sendMessage() {
     const query = chatInput.value.trim();
-    if (!query) return;
+    const target = selected;
+    if (!query || !target || pending.has(target)) return;
 
-    addMessage('user', query);
+    addToHistory(target, { role: 'user', text: query });
     chatInput.value = '';
-    sendBtn.disabled = true;
-    addTyping();
+    pending.add(target);
+    renderMessages();
+    renderComposer();
 
     try {
       const res = await fetch('/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query, language })
+        body: JSON.stringify({ query, language, filename: target })
       });
       const data = await res.json();
-      removeTyping();
 
       if (!res.ok) throw new Error(data.error || 'Something went wrong');
 
-      addMessage('bot', data.answer, data.sources);
+      addToHistory(target, { role: 'bot', text: data.answer, sources: data.sources });
     } catch (err) {
-      removeTyping();
-      addMessage('bot', 'Something went wrong — please try again.');
+      addToHistory(target, { role: 'bot', text: 'Error: ' + err.message });
     } finally {
-      sendBtn.disabled = false;
+      pending.delete(target);
+      if (selected === target) renderMessages();
+      renderComposer();
+      if (selected === target) chatInput.focus();
     }
   }
 
@@ -522,6 +714,10 @@
   chatInput.addEventListener('keydown', e => {
     if (e.key === 'Enter') sendMessage();
   });
+
+  /* ---------- Start ---------- */
+  renderAll();
+  loadDocuments();
 </script>
 </body>
 </html>

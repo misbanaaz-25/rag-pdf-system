@@ -1,24 +1,30 @@
 const fs = require('fs');
 const path = require('path');
 
-const STORE_FILE = path.join(__dirname, '../../data/vectorStore.json');
+const DATA_DIR = path.join(__dirname, '../../data');
+const STORE_FILE = path.join(DATA_DIR, 'vectorStore.json');
 
-// Data folder aur file na ho toh bana do
 function ensureStoreExists() {
-  const dataDir = path.join(__dirname, '../../data');
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir);
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR);
   }
   if (!fs.existsSync(STORE_FILE)) {
     fs.writeFileSync(STORE_FILE, JSON.stringify([]));
   }
 }
 
-// Naye chunks + embeddings store mein add karo
-function addToStore(filename, chunks, embeddings) {
+function getStore() {
   ensureStoreExists();
+  return JSON.parse(fs.readFileSync(STORE_FILE));
+}
 
-  const store = JSON.parse(fs.readFileSync(STORE_FILE));
+function saveStore(store) {
+  fs.writeFileSync(STORE_FILE, JSON.stringify(store, null, 2));
+}
+
+// Same filename dobara aaye toh purane chunks hata ke naye daalo
+function addToStore(filename, chunks, embeddings) {
+  const store = getStore().filter(item => item.filename !== filename);
 
   chunks.forEach((chunk, i) => {
     store.push({
@@ -28,13 +34,24 @@ function addToStore(filename, chunks, embeddings) {
     });
   });
 
-  fs.writeFileSync(STORE_FILE, JSON.stringify(store, null, 2));
+  saveStore(store);
 }
 
-// Poora store wapas do (baad mein search karne ke liye)
-function getStore() {
-  ensureStoreExists();
-  return JSON.parse(fs.readFileSync(STORE_FILE));
+// Stored PDFs ke unique naam
+function getDocuments() {
+  return [...new Set(getStore().map(item => item.filename))];
 }
 
-module.exports = { addToStore, getStore };
+// Ek PDF ke saare chunks hata do. Kitne chunks hate, wo number wapas deta hai
+function deleteDocument(filename) {
+  const store = getStore();
+  const remaining = store.filter(item => item.filename !== filename);
+  const removed = store.length - remaining.length;
+
+  if (removed > 0) {
+    saveStore(remaining);
+  }
+  return removed;
+}
+
+module.exports = { addToStore, getStore, getDocuments, deleteDocument };

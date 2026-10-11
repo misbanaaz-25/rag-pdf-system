@@ -1,7 +1,6 @@
 const { getStore } = require('./store');
 const { getEmbeddings } = require('./embedder');
 
-// Do vectors ke beech cosine similarity nikalta hai
 function cosineSimilarity(vecA, vecB) {
   let dotProduct = 0;
   let normA = 0;
@@ -16,21 +15,24 @@ function cosineSimilarity(vecA, vecB) {
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-// User ke sawaal ke liye sabse relevant chunks dhoondta hai
-async function searchSimilarChunks(query, topK = 3) {
-  // Sawaal ka embedding banao
+// filename dene pe search sirf usi PDF mein hoga
+async function searchSimilarChunks(query, topK = 3, filename = null) {
   const [queryEmbedding] = await getEmbeddings([query]);
 
-  // Saare stored chunks lao
-  const store = getStore();
+  // Khaali chunks ignore karo
+  let store = getStore().filter(item => item.text && item.text.trim());
 
-  // Har chunk ka similarity score nikalo
+  if (filename) {
+    store = store.filter(item => item.filename === filename);
+  }
+
+  if (store.length === 0) return [];
+
   const scored = store.map(item => ({
     ...item,
     score: cosineSimilarity(queryEmbedding, item.embedding)
   }));
 
-  // Sabse high score wale upar layo, aur sirf top K chunks lo
   scored.sort((a, b) => b.score - a.score);
   return scored.slice(0, topK);
 }

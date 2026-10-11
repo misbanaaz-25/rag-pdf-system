@@ -8,14 +8,17 @@ async function getEmbeddings(textArray) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      input: textArray,   // ye ek array of chunks hoga
+      input: textArray,
       model: 'voyage-3'
     })
   });
 
   const data = await response.json();
 
-  // sirf embeddings wapas bhejo, poora response nahi
+  if (!data.data) {
+    throw new Error('Voyage error: ' + JSON.stringify(data));
+  }
+
   return data.data.map(item => item.embedding);
 }
 
