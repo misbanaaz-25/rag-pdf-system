@@ -1,5 +1,4 @@
 require('dotenv').config();
-console.log('Key loaded:', process.env.GROQ_API_KEY ? process.env.GROQ_API_KEY.substring(0, 10) + '...' : 'NOT FOUND');
 
 async function generateAnswer(query, contextChunks) {
   const context = contextChunks.map(c => c.text).join('\n\n---\n\n');
@@ -11,7 +10,7 @@ async function generateAnswer(query, contextChunks) {
       'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
+      model: 'openai/gpt-oss-20b',
       messages: [
         {
           role: 'user',
@@ -27,7 +26,11 @@ Sawaal: ${query}`
   });
 
   const data = await response.json();
-  console.log('Groq response:', data);
+
+  if (!data.choices) {
+    throw new Error('Groq error: ' + JSON.stringify(data));
+  }
+
   return data.choices[0].message.content;
 }
 
