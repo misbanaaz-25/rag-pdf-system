@@ -29,6 +29,7 @@
     display: flex;
   }
 
+  /* ---------- Sidebar ---------- */
   .sidebar {
     width: 320px;
     flex-shrink: 0;
@@ -52,7 +53,7 @@
   .tagline {
     font-size: 13px;
     color: var(--muted);
-    margin: 4px 0 0;
+    margin: 6px 0 0;
     line-height: 1.5;
   }
 
@@ -132,6 +133,7 @@
     line-height: 1.6;
   }
 
+  /* ---------- Chat area ---------- */
   .chat-area {
     flex: 1;
     display: flex;
@@ -142,7 +144,37 @@
   .chat-header {
     padding: 22px 40px;
     border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
   }
+
+  .lang-switch {
+    display: flex;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 3px;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+
+  .lang-btn {
+    border: none;
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    padding: 7px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .lang-btn:hover { color: var(--ink); }
+  .lang-btn.active { background: var(--ink); color: var(--paper); }
 
   .chat-header h1 {
     font-family: 'Fraunces', serif;
@@ -303,13 +335,20 @@
 
   <main class="chat-area">
     <div class="chat-header">
-      <h1>Ask your documents</h1>
-      <p>Answers are grounded in the PDFs you've uploaded.</p>
+      <div>
+        <h1>Ask your documents</h1>
+        <p>Answers are grounded in the PDFs you've uploaded.</p>
+      </div>
+      <div class="lang-switch" id="langSwitch" role="group" aria-label="Answer language">
+        <button class="lang-btn" data-lang="english">English</button>
+        <button class="lang-btn" data-lang="hindi">हिन्दी</button>
+        <button class="lang-btn active" data-lang="hinglish">Hinglish</button>
+      </div>
     </div>
 
     <div class="messages" id="messages">
       <div class="empty-state" id="emptyState">
-        <div class="glyph">" "</div>
+        <div class="glyph">“ ”</div>
         <h2>Nothing uploaded yet</h2>
         <p>Add a PDF on the left, then ask a question about it here.</p>
       </div>
@@ -338,6 +377,15 @@
   const sendBtn = document.getElementById('sendBtn');
 
   let selectedFile = null;
+  let language = 'hinglish';
+
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      language = btn.dataset.lang;
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
 
   pdfFile.addEventListener('change', () => {
     selectedFile = pdfFile.files[0] || null;
@@ -454,7 +502,7 @@
       const res = await fetch('/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query })
+        body: JSON.stringify({ query, language })
       });
       const data = await res.json();
       removeTyping();

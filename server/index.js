@@ -72,15 +72,15 @@ app.post('/search', async (req, res) => {
 });
 
 app.post('/chat', async (req, res) => {
-  try {
-    const { query } = req.body;
+   try {
+    const { query, language } = req.body;
 
     if (!query) {
       return res.status(400).json({ error: 'Sawaal (query) nahi mila!' });
     }
 
     const relevantChunks = await searchSimilarChunks(query);
-    const answer = await generateAnswer(query, relevantChunks);
+    const answer = await generateAnswer(query, relevantChunks, language);
 
     res.json({
       query,
