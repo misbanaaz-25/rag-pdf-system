@@ -3,20 +3,54 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="light dark" />
 <title>DocMind — Ask your PDFs</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap');
 
   :root {
+    color-scheme: light dark;
     --ink: #1b1d22;
     --paper: #f6f4ef;
     --panel: #ffffff;
     --line: #e4e0d6;
     --accent: #3d5a80;
     --accent-soft: #e8edf3;
+    --accent-hover: #2f4763;
+    --on-accent: #ffffff;
     --muted: #6b6f76;
     --good: #2e7d55;
     --bad: #b3402f;
+    --bad-soft: #f8e9e6;
+    --disabled: #cfcbc0;
+    --user-bg: #1b1d22;
+    --user-fg: #f6f4ef;
+    --btn-bg: #1b1d22;
+    --btn-fg: #f6f4ef;
+    --btn-hover: #3d5a80;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #ece9e2;
+      --paper: #14161a;
+      --panel: #1c1f24;
+      --line: #2e3238;
+      --accent: #7ea2d4;
+      --accent-soft: #232c3a;
+      --accent-hover: #9bb9e0;
+      --on-accent: #10151c;
+      --muted: #9aa0a8;
+      --good: #5bbf8a;
+      --bad: #e08a7a;
+      --bad-soft: #3a2522;
+      --disabled: #3a3e45;
+      --user-bg: #2d4a73;
+      --user-fg: #f2f5fa;
+      --btn-bg: #7ea2d4;
+      --btn-fg: #10151c;
+      --btn-hover: #9bb9e0;
+    }
   }
 
   * { box-sizing: border-box; }
@@ -88,8 +122,8 @@
   }
 
   button.primary {
-    background: var(--ink);
-    color: var(--paper);
+    background: var(--btn-bg);
+    color: var(--btn-fg);
     border: none;
     padding: 11px 16px;
     border-radius: 8px;
@@ -101,8 +135,8 @@
     transition: background 0.15s ease;
   }
 
-  button.primary:hover { background: var(--accent); }
-  button.primary:disabled { background: #cfcbc0; cursor: not-allowed; }
+  button.primary:hover { background: var(--btn-hover); }
+  button.primary:disabled { background: var(--disabled); cursor: not-allowed; }
 
   .status-line { font-size: 12.5px; color: var(--muted); min-height: 18px; line-height: 1.5; }
   .status-line.ok { color: var(--good); }
@@ -168,7 +202,7 @@
     transition: color 0.15s ease, background 0.15s ease;
   }
 
-  .doc-del:hover { color: var(--bad); background: #f8e9e6; }
+  .doc-del:hover { color: var(--bad); background: var(--bad-soft); }
 
   .sidebar-foot {
     margin-top: auto;
@@ -235,6 +269,24 @@
   .lang-btn:hover { color: var(--ink); }
   .lang-btn.active { background: var(--ink); color: var(--paper); }
 
+  .header-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+
+  .ghost-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 9px 14px;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .ghost-btn:hover:not(:disabled) { color: var(--bad); border-color: var(--bad); }
+  .ghost-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
   .messages {
     flex: 1;
     overflow-y: auto;
@@ -281,7 +333,7 @@
     word-break: break-word;
   }
 
-  .msg.user .bubble { background: var(--ink); color: var(--paper); border-bottom-right-radius: 3px; }
+  .msg.user .bubble { background: var(--user-bg); color: var(--user-fg); border-bottom-right-radius: 3px; }
   .msg.bot .bubble { background: var(--panel); border: 1px solid var(--line); border-bottom-left-radius: 3px; }
 
   .sources { margin-top: 7px; display: flex; gap: 6px; flex-wrap: wrap; }
@@ -293,6 +345,22 @@
     padding: 3px 9px;
     border-radius: 100px;
   }
+
+  .chips { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .chip {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: var(--accent);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 100px;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .chip:hover { border-color: var(--accent); background: var(--accent-soft); }
 
   .typing { display: flex; gap: 4px; padding: 4px 2px; }
   .typing span {
@@ -330,7 +398,7 @@
 
   .send-btn {
     background: var(--accent);
-    color: white;
+    color: var(--on-accent);
     border: none;
     width: 38px;
     height: 38px;
@@ -343,8 +411,8 @@
     transition: background 0.15s ease;
   }
 
-  .send-btn:hover { background: #2f4763; }
-  .send-btn:disabled { background: #cfcbc0; cursor: not-allowed; }
+  .send-btn:hover { background: var(--accent-hover); }
+  .send-btn:disabled { background: var(--disabled); cursor: not-allowed; }
 
   .composer-hint { font-size: 11.5px; color: var(--muted); margin-top: 8px; text-align: center; }
 </style>
@@ -381,10 +449,13 @@
         <h1 id="chatTitle">Ask your documents</h1>
         <p id="chatSub">Upload a PDF to get started.</p>
       </div>
-      <div class="lang-switch" id="langSwitch" role="group" aria-label="Answer language">
-        <button class="lang-btn" data-lang="english">English</button>
-        <button class="lang-btn" data-lang="hindi">हिन्दी</button>
-        <button class="lang-btn active" data-lang="hinglish">Hinglish</button>
+      <div class="header-actions">
+        <button class="ghost-btn" id="clearBtn" type="button">Clear chat</button>
+        <div class="lang-switch" id="langSwitch" role="group" aria-label="Answer language">
+          <button class="lang-btn" data-lang="english">English</button>
+          <button class="lang-btn" data-lang="hindi">हिन्दी</button>
+          <button class="lang-btn active" data-lang="hinglish">Hinglish</button>
+        </div>
       </div>
     </div>
 
@@ -394,7 +465,7 @@
       <div class="composer-inner">
         <input type="text" id="chatInput" placeholder="Ask something about your document…" />
         <button class="send-btn" id="sendBtn" aria-label="Send">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 12L20 4L14 20L11 13L4 12Z" stroke="white" stroke-width="2" stroke-linejoin="round"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 12L20 4L14 20L11 13L4 12Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
         </button>
       </div>
       <div class="composer-hint">Press Enter to send</div>
@@ -413,6 +484,7 @@
   const sendBtn = document.getElementById('sendBtn');
   const chatTitle = document.getElementById('chatTitle');
   const chatSub = document.getElementById('chatSub');
+  const clearBtn = document.getElementById('clearBtn');
 
   let documents = [];          // names of PDFs stored on the server
   let selected = null;         // the PDF we are chatting with
@@ -421,12 +493,91 @@
   const histories = {};        // filename -> list of messages
   const pending = new Set();   // filenames waiting for an answer
 
+  const WELCOME = {
+    english: {
+      hello: name => "Hi! I'm DocMind. I have " + name + " open. Ask me anything about it, or try one of these:",
+      chips: ['Summarize this PDF', 'What is the title of this PDF?', 'What is this PDF about?']
+    },
+    hindi: {
+      hello: name => 'नमस्ते! मैं DocMind हूँ। मेरे पास ' + name + ' खुली है। इसके बारे में कुछ भी पूछिए, या इनमें से कोई आज़माइए:',
+      chips: ['इस PDF का सारांश बताइए', 'इस PDF का शीर्षक क्या है?', 'इस PDF में क्या है?']
+    },
+    hinglish: {
+      hello: name => 'Hi! Main DocMind hoon. Mere paas ' + name + ' khuli hai. Isme se kuch bhi poochho, ya inme se koi try karo:',
+      chips: ['Is PDF ka summary batao', 'Is PDF ka title kya hai?', 'Is PDF mein kya hai?']
+    }
+  };
+
+  /* ---------- Saved chats (stays in this browser, survives refresh) ---------- */
+  const STORAGE_KEY = 'docmind:v1';
+
+  function loadSaved() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const data = raw ? JSON.parse(raw) : {};
+      return data && typeof data === 'object' ? data : {};
+    } catch (err) {
+      return {};
+    }
+  }
+
+  // Failed answers aur bina jawab wale sawaal save nahi karte
+  function savableMessages(list) {
+    return list.filter((m, i) => {
+      if (m.error) return false;
+      if (m.role === 'user') {
+        const next = list[i + 1];
+        return !!next && !next.error;
+      }
+      return true;
+    });
+  }
+
+  function saveState() {
+    try {
+      const clean = {};
+      Object.keys(histories).forEach(name => {
+        const msgs = savableMessages(histories[name]);
+        if (msgs.length) clean[name] = msgs;
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ histories: clean, selected, language }));
+    } catch (err) {
+      // storage full ya blocked: chat chalti rahegi, bas save nahi hogi
+    }
+  }
+
+  function setLanguage(lang) {
+    language = lang;
+    document.querySelectorAll('.lang-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.lang === lang);
+    });
+  }
+
+  // Document list aane ke baad hi tay hoga ki kaunsa document khulega
+  let preferredDocument = null;
+
+  const saved = loadSaved();
+  if (saved.histories && typeof saved.histories === 'object') {
+    Object.keys(saved.histories).forEach(name => {
+      if (Array.isArray(saved.histories[name])) histories[name] = saved.histories[name];
+    });
+  }
+  if (saved.language && WELCOME[saved.language]) setLanguage(saved.language);
+  if (typeof saved.selected === 'string') preferredDocument = saved.selected;
+
+  // Server pe jo documents nahi bache, unki chat bhi hata do
+  function pruneHistories() {
+    Object.keys(histories).forEach(name => {
+      if (!documents.includes(name)) delete histories[name];
+    });
+  }
+
   /* ---------- Language switch ---------- */
   document.querySelectorAll('.lang-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      language = btn.dataset.lang;
-      document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+      setLanguage(btn.dataset.lang);
+      saveState();
+      renderMessages();   // welcome message ki language bhi badal jaye
     });
   });
 
@@ -492,6 +643,7 @@
     chatInput.placeholder = selected
       ? 'Ask something about this document…'
       : 'Select a document first…';
+    clearBtn.disabled = !selected || busy || !(histories[selected] || []).length;
   }
 
   function showEmpty(title, text) {
@@ -535,6 +687,32 @@
     return msg;
   }
 
+  function buildWelcome() {
+    const text = WELCOME[language];
+
+    const msg = document.createElement('div');
+    msg.className = 'msg bot';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = text.hello(selected);
+    msg.appendChild(bubble);
+
+    const chips = document.createElement('div');
+    chips.className = 'chips';
+    text.chips.forEach(label => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip';
+      chip.textContent = label;
+      chip.addEventListener('click', () => askQuestion(label));
+      chips.appendChild(chip);
+    });
+    msg.appendChild(chips);
+
+    return msg;
+  }
+
   function buildTyping() {
     const msg = document.createElement('div');
     msg.className = 'msg bot';
@@ -556,7 +734,7 @@
 
     const history = histories[selected] || [];
     if (!history.length && !pending.has(selected)) {
-      showEmpty('Ask about this document', 'Ask anything about ' + selected + '.');
+      messagesEl.appendChild(buildWelcome());
       return;
     }
 
@@ -574,16 +752,19 @@
 
   function selectDocument(name) {
     selected = name;
+    saveState();
     renderAll();
     chatInput.focus();
   }
 
   /* ---------- Load documents from server ---------- */
   async function loadDocuments(selectName) {
+    let loaded = false;
     try {
       const res = await fetch('/documents');
       const data = await res.json();
       documents = data.documents || [];
+      loaded = true;
     } catch (err) {
       documents = [];
     }
@@ -591,7 +772,16 @@
     if (selectName && documents.includes(selectName)) {
       selected = selectName;
     } else if (!selected || !documents.includes(selected)) {
-      selected = documents.length ? documents[documents.length - 1] : null;
+      selected = documents.includes(preferredDocument)
+        ? preferredDocument
+        : (documents.length ? documents[documents.length - 1] : null);
+    }
+    preferredDocument = null;
+
+    // Server na mile toh kuch bhi mitana nahi, warna saari saved chat ud jayegi
+    if (loaded) {
+      pruneHistories();
+      saveState();
     }
     renderAll();
   }
@@ -606,6 +796,7 @@
       if (!res.ok) throw new Error(data.error || 'Delete failed');
 
       delete histories[name];
+      saveState();
       uploadStatus.textContent = 'Deleted ' + name + '.';
       uploadStatus.className = 'status-line ok';
       await loadDocuments();
@@ -676,6 +867,7 @@
     if (!documents.includes(name)) return;   // document was deleted meanwhile
     if (!histories[name]) histories[name] = [];
     histories[name].push(message);
+    saveState();
   }
 
   async function sendMessage() {
@@ -701,7 +893,7 @@
 
       addToHistory(target, { role: 'bot', text: data.answer, sources: data.sources });
     } catch (err) {
-      addToHistory(target, { role: 'bot', text: 'Error: ' + err.message });
+      addToHistory(target, { role: 'bot', text: 'Error: ' + err.message, error: true });
     } finally {
       pending.delete(target);
       if (selected === target) renderMessages();
@@ -710,6 +902,21 @@
     }
   }
 
+  function askQuestion(text) {
+    chatInput.value = text;
+    sendMessage();
+  }
+
+  function clearChat() {
+    if (!selected || !(histories[selected] || []).length) return;
+    if (!confirm('Clear this chat? The document stays.')) return;
+
+    delete histories[selected];
+    saveState();
+    renderAll();
+  }
+
+  clearBtn.addEventListener('click', clearChat);
   sendBtn.addEventListener('click', sendMessage);
   chatInput.addEventListener('keydown', e => {
     if (e.key === 'Enter') sendMessage();
