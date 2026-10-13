@@ -18,9 +18,14 @@ const LANGUAGE_RULES = {
   }
 };
 
-async function generateAnswer(query, contextChunks, language = 'hinglish') {
+async function generateAnswer(query, contextChunks, language = 'hinglish', mode = 'question') {
   const rules = LANGUAGE_RULES[language] || LANGUAGE_RULES.hinglish;
   const context = contextChunks.map(c => c.text).join('\n\n---\n\n');
+
+  const overviewRule = mode === 'overview'
+    ? `
+7. The user wants an overview of the whole document. The context has passages taken from the start to the end of the document, in order. In 4 to 6 short lines, say what the document is, its main topics or sections, and the key points. Do not mention "context" or "passages".`
+    : '';
 
   const systemPrompt = `You are DocMind, a friendly assistant that answers questions about the user's uploaded PDF documents.
 
@@ -30,9 +35,10 @@ Always reply in ${rules.name}, even if the user's question is written in a diffe
 Rules:
 1. If the user sends a greeting or small talk (like "hey" or "thanks"), reply warmly and briefly, and mention you can help with questions about their documents.
 2. For questions about the document, answer ONLY from the context provided. Never make things up.
-3. If the context does not contain the answer, reply with this sentence: "${rules.notFound}"
-4. Keep answers short and clear.
-5. Plain text only. Do not use markdown: no asterisks, no # headings, no backticks. If you need a list, use simple lines like "1." and "2.".`;
+3. Short or vague messages are about the document. For example, "question 5" means the 5th question or item in the document, and "topic" means what the document is about. Find the matching part and answer it.
+4. Only if the context really has nothing relevant, reply with this sentence: "${rules.notFound}"
+5. Keep answers short and clear.
+6. Plain text only. Do not use markdown: no asterisks, no # headings, no backticks. If you need a list, use simple lines like "1." and "2.".${overviewRule}`;
 
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',

@@ -42,6 +42,13 @@ function getDocuments() {
   return [...new Set(getStore().map(item => item.filename))];
 }
 
+// Ek PDF ke chunks, document ke order mein (khaali chunks chhod ke)
+function getDocumentChunks(filename) {
+  return getStore().filter(
+    item => item.filename === filename && item.text && item.text.trim()
+  );
+}
+
 // Ek PDF ke saare chunks hata do. Kitne chunks hate, wo number wapas deta hai
 function deleteDocument(filename) {
   const store = getStore();
@@ -54,4 +61,4 @@ function deleteDocument(filename) {
   return removed;
 }
 
-module.exports = { addToStore, getStore, getDocuments, deleteDocument };
+module.exports = { addToStore, getStore, getDocuments, getDocumentChunks, deleteDocument };

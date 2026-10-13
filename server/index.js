@@ -4,7 +4,7 @@ const fs = require('fs');
 const pdfParse = require('pdf-parse');
 const { chunkText } = require('./ingest/chunker');
 const { getEmbeddings } = require('./ingest/embedder');
-const { addToStore, getDocuments, deleteDocument } = require('./ingest/store');
+const { addToStore, getDocuments, getDocumentChunks, deleteDocument } = require('./ingest/store');
 const { searchSimilarChunks } = require('./ingest/search');
 const { generateAnswer } = require('./ingest/generate');
 
@@ -13,6 +13,55 @@ app.use(express.json());
 app.use(express.static('public'));
 
 const upload = multer({ dest: 'uploads/' });
+
+// ---- Helpers ----
+// Itne ya kam chunks wali PDF "chhoti" maani jayegi: poori seedha model ko denge
+const SMALL_DOC_MAX_CHUNKS = 4;
+
+// "is PDF mein kya hai?" jaise sawaal pehchanne ke liye
+function isOverviewQuestion(query) {
+  const q = query.toLowerCase();
+  if (q.split(/\s+/).length > 16) return false;
+  if (/(summar|overview|gist|\bsaar\b)/.test(q)) return true;
+
+  const mentionsDoc = /\b(pdf|file|document|doc)\b/.test(q);
+  const asksAbout = /(inside|content|about|explain|describe|title|topic|name|kya|batao|samjha|what is|what's|whats)/.test(q);
+  return mentionsDoc && asksAbout;
+}
+
+// Shuru se aakhir tak barabar doori pe se max chunks uthao
+function sampleEvenly(items, max) {
+  if (items.length <= max) return items;
+  const picked = [];
+  for (let i = 0; i < max; i++) {
+    picked.push(items[Math.round((i * (items.length - 1)) / (max - 1))]);
+  }
+  return picked;
+}
+
+// Sawaal ke liye kaunse chunks model ko bhejne hain, ye yahan tay hota hai
+async function pickContext(query, filename) {
+  const docChunks = filename ? getDocumentChunks(filename) : [];
+
+  // 1) Poore document ka overview
+  if (docChunks.length > 0 && isOverviewQuestion(query)) {
+    return { mode: 'overview', chunks: sampleEvenly(docChunks, 5), sources: [] };
+  }
+
+  // 2) Chhoti PDF: search nahi, poora document (Voyage ki limit bhi nahi lagti)
+  if (docChunks.length > 0 && docChunks.length <= SMALL_DOC_MAX_CHUNKS) {
+    return { mode: 'whole-document', chunks: docChunks, sources: [] };
+  }
+
+  // 3) Badi PDF: similarity search
+  const found = await searchSimilarChunks(query, 3, filename || null);
+  return {
+    mode: 'search',
+    chunks: found,
+    sources: found.map(c => ({ filename: c.filename, score: c.score }))
+  };
+}
+// ---- END HELPERS ----
 
 app.get('/', (req, res) => {
   res.send('RAG server is running! 🚀');
@@ -97,15 +146,16 @@ app.post('/search', async (req, res) => {
 app.post('/chat', async (req, res) => {
   try {
     const { query, language, filename } = req.body;
-    console.log('Chat request, language:', language, '| document:', filename || 'all');
 
     if (!query) {
       return res.status(400).json({ error: 'Sawaal (query) nahi mila!' });
     }
 
-    const relevantChunks = await searchSimilarChunks(query, 3, filename || null);
+    const { mode, chunks, sources } = await pickContext(query, filename);
 
-    if (relevantChunks.length === 0) {
+    console.log('Chat request | language:', language, '| document:', filename || 'all', '| mode:', mode, '| chunks:', chunks.length);
+
+    if (chunks.length === 0) {
       return res.json({
         query,
         answer: 'Please upload a PDF first, then ask your question.',
@@ -113,13 +163,9 @@ app.post('/chat', async (req, res) => {
       });
     }
 
-    const answer = await generateAnswer(query, relevantChunks, language);
+    const answer = await generateAnswer(query, chunks, language, mode === 'overview' ? 'overview' : 'question');
 
-    res.json({
-      query,
-      answer,
-      sources: relevantChunks.map(c => ({ filename: c.filename, score: c.score }))
-    });
+    res.json({ query, answer, sources });
 
   } catch (error) {
     console.error(error);
