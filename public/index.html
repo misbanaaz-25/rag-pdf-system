@@ -205,11 +205,43 @@
   .doc-del:hover { color: var(--bad); background: var(--bad-soft); }
 
   .sidebar-foot {
-    margin-top: auto;
+    margin-top: 0;
     font-size: 11.5px;
     color: var(--muted);
     line-height: 1.6;
   }
+
+  .account {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .account-email {
+    font-size: 12.5px;
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .link-btn {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--accent);
+    cursor: pointer;
+  }
+
+  .link-btn:hover { text-decoration: underline; }
 
   /* ---------- Chat area ---------- */
   .chat-area {
@@ -438,6 +470,11 @@
 
     <div class="doc-list" id="docList"></div>
 
+    <div class="account">
+      <div class="account-email" id="accountEmail"></div>
+      <button type="button" class="link-btn" id="logoutBtn">Sign out</button>
+    </div>
+
     <div class="sidebar-foot">
       Built with Node.js, Voyage embeddings &amp; retrieval-augmented generation.
     </div>
@@ -485,6 +522,8 @@
   const chatTitle = document.getElementById('chatTitle');
   const chatSub = document.getElementById('chatSub');
   const clearBtn = document.getElementById('clearBtn');
+  const accountEmail = document.getElementById('accountEmail');
+  const logoutBtn = document.getElementById('logoutBtn');
 
   let documents = [];          // names of PDFs stored on the server
   let selected = null;         // the PDF we are chatting with
@@ -509,7 +548,7 @@
   };
 
   /* ---------- Saved chats (stays in this browser, survives refresh) ---------- */
-  const STORAGE_KEY = 'docmind:v1';
+  let STORAGE_KEY = 'docmind:v1';   // sign in ke baad ban jata hai: docmind:v1:<user id>
 
   function loadSaved() {
     try {
@@ -556,14 +595,17 @@
   // Document list aane ke baad hi tay hoga ki kaunsa document khulega
   let preferredDocument = null;
 
-  const saved = loadSaved();
-  if (saved.histories && typeof saved.histories === 'object') {
-    Object.keys(saved.histories).forEach(name => {
-      if (Array.isArray(saved.histories[name])) histories[name] = saved.histories[name];
-    });
+  // Is user ki saved chat wapas lao (user pehchan hone ke baad hi chalta hai)
+  function restoreSaved() {
+    const saved = loadSaved();
+    if (saved.histories && typeof saved.histories === 'object') {
+      Object.keys(saved.histories).forEach(name => {
+        if (Array.isArray(saved.histories[name])) histories[name] = saved.histories[name];
+      });
+    }
+    if (saved.language && WELCOME[saved.language]) setLanguage(saved.language);
+    if (typeof saved.selected === 'string') preferredDocument = saved.selected;
   }
-  if (saved.language && WELCOME[saved.language]) setLanguage(saved.language);
-  if (typeof saved.selected === 'string') preferredDocument = saved.selected;
 
   // Server pe jo documents nahi bache, unki chat bhi hata do
   function pruneHistories() {
@@ -757,11 +799,22 @@
     chatInput.focus();
   }
 
+  /* ---------- Server calls ---------- */
+  // Agar login khatam ho gaya (401), toh seedha login page pe bhejo
+  async function api(url, options) {
+    const res = await fetch(url, options);
+    if (res.status === 401) {
+      window.location.href = '/login.html';
+      throw new Error('Please sign in.');
+    }
+    return res;
+  }
+
   /* ---------- Load documents from server ---------- */
   async function loadDocuments(selectName) {
     let loaded = false;
     try {
-      const res = await fetch('/documents');
+      const res = await api('/documents');
       const data = await res.json();
       documents = data.documents || [];
       loaded = true;
@@ -791,7 +844,7 @@
     if (!confirm('Delete "' + name + '" and its chat? This cannot be undone.')) return;
 
     try {
-      const res = await fetch('/documents/' + encodeURIComponent(name), { method: 'DELETE' });
+      const res = await api('/documents/' + encodeURIComponent(name), { method: 'DELETE' });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Delete failed');
 
@@ -842,7 +895,7 @@
     formData.append('pdf', selectedFile);
 
     try {
-      const res = await fetch('/upload', { method: 'POST', body: formData });
+      const res = await api('/upload', { method: 'POST', body: formData });
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.error || 'Upload failed');
@@ -882,7 +935,7 @@
     renderComposer();
 
     try {
-      const res = await fetch('/chat', {
+      const res = await api('/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query, language, filename: target })
@@ -922,9 +975,45 @@
     if (e.key === 'Enter') sendMessage();
   });
 
+  /* ---------- Sign out ---------- */
+  logoutBtn.addEventListener('click', async () => {
+    try {
+      await fetch('/auth/logout', { method: 'POST' });
+    } catch (err) {
+      // server na mile tab bhi login page pe chalte hain
+    }
+    window.location.href = '/login.html';
+  });
+
   /* ---------- Start ---------- */
-  renderAll();
-  loadDocuments();
+  async function init() {
+    let user = null;
+
+    try {
+      const res = await fetch('/auth/me');
+      const data = await res.json();
+      user = data.user;
+    } catch (err) {
+      messagesEl.innerHTML = '';
+      showEmpty('Server not reachable', 'Could not connect to the server. Please check that it is running, then refresh the page.');
+      return;
+    }
+
+    if (!user) {
+      window.location.href = '/login.html';
+      return;
+    }
+
+    accountEmail.textContent = user.email;
+    accountEmail.title = user.email;
+    STORAGE_KEY = 'docmind:v1:' + user.id;   // har user ki chat alag
+    restoreSaved();
+
+    renderAll();
+    loadDocuments();
+  }
+
+  init();
 </script>
 </body>
 </html>
