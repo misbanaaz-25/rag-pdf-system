@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="light dark" />
+<title>Sign in — DocMind</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    color-scheme: light dark;
+    --ink: #1b1d22;
+    --paper: #f6f4ef;
+    --panel: #ffffff;
+    --line: #e4e0d6;
+    --accent: #3d5a80;
+    --accent-soft: #e8edf3;
+    --muted: #6b6f76;
+    --bad: #b3402f;
+    --bad-soft: #f8e9e6;
+    --disabled: #cfcbc0;
+    --btn-bg: #1b1d22;
+    --btn-fg: #f6f4ef;
+    --btn-hover: #3d5a80;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ink: #ece9e2;
+      --paper: #14161a;
+      --panel: #1c1f24;
+      --line: #2e3238;
+      --accent: #7ea2d4;
+      --accent-soft: #232c3a;
+      --muted: #9aa0a8;
+      --bad: #e08a7a;
+      --bad-soft: #3a2522;
+      --disabled: #3a3e45;
+      --btn-bg: #7ea2d4;
+      --btn-fg: #10151c;
+      --btn-hover: #9bb9e0;
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    font-family: 'Inter', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  .card {
+    width: 100%;
+    max-width: 400px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 36px 32px 32px;
+  }
+
+  .brand {
+    font-family: 'Fraunces', serif;
+    font-size: 30px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .brand span { color: var(--accent); }
+
+  .tagline { font-size: 14px; color: var(--muted); margin: 6px 0 26px; line-height: 1.5; }
+
+  .tabs {
+    display: flex;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 3px;
+    gap: 2px;
+    margin-bottom: 22px;
+  }
+
+  .tab {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--muted);
+    padding: 9px 12px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .tab:hover { color: var(--ink); }
+  .tab.active { background: var(--ink); color: var(--paper); }
+
+  label { display: block; font-size: 13px; font-weight: 500; margin: 0 0 6px; }
+
+  input {
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+    font-size: 14.5px;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 14px;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+
+  input:focus { border-color: var(--accent); }
+
+  .field { margin-bottom: 16px; }
+
+  .pw { position: relative; }
+  .pw input { padding-right: 64px; }
+
+  .pw-toggle {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: none;
+    background: transparent;
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--accent);
+    padding: 6px 8px;
+    cursor: pointer;
+  }
+
+  .hint { font-size: 12.5px; color: var(--muted); margin: 6px 0 0; min-height: 18px; }
+
+  .error {
+    font-size: 13px;
+    color: var(--bad);
+    background: var(--bad-soft);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  .error:empty { display: none; }
+
+  button.primary {
+    width: 100%;
+    background: var(--btn-bg);
+    color: var(--btn-fg);
+    border: none;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14.5px;
+    font-weight: 600;
+    padding: 13px 16px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  button.primary:hover:not(:disabled) { background: var(--btn-hover); }
+  button.primary:disabled { background: var(--disabled); cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+  <main class="card">
+    <div class="brand">Doc<span>Mind</span></div>
+    <p class="tagline">Upload a PDF, then ask it anything.</p>
+
+    <div class="tabs" role="tablist">
+      <button type="button" class="tab active" id="tabLogin" data-mode="login">Sign in</button>
+      <button type="button" class="tab" id="tabSignup" data-mode="signup">Create account</button>
+    </div>
+
+    <form id="authForm" novalidate>
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" type="email" autocomplete="email" placeholder="you@example.com" />
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="pw">
+          <input id="password" type="password" autocomplete="current-password" />
+          <button type="button" class="pw-toggle" id="togglePw">Show</button>
+        </div>
+        <p class="hint" id="hint"></p>
+      </div>
+
+      <div class="error" id="error" role="alert"></div>
+
+      <button type="submit" class="primary" id="submitBtn">Sign in</button>
+    </form>
+  </main>
+
+<script>
+  const tabs = document.querySelectorAll('.tab');
+  const form = document.getElementById('authForm');
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+  const togglePw = document.getElementById('togglePw');
+  const hint = document.getElementById('hint');
+  const errorBox = document.getElementById('error');
+  const submitBtn = document.getElementById('submitBtn');
+
+  let mode = 'login';   // 'login' ya 'signup'
+
+  function label() {
+    return mode === 'login' ? 'Sign in' : 'Create account';
+  }
+
+  function setMode(next) {
+    mode = next;
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+    submitBtn.textContent = label();
+    passwordInput.autocomplete = mode === 'login' ? 'current-password' : 'new-password';
+    hint.textContent = mode === 'signup' ? 'At least 8 characters.' : '';
+    errorBox.textContent = '';
+  }
+
+  tabs.forEach(t => t.addEventListener('click', () => setMode(t.dataset.mode)));
+
+  togglePw.addEventListener('click', () => {
+    const showing = passwordInput.type === 'text';
+    passwordInput.type = showing ? 'password' : 'text';
+    togglePw.textContent = showing ? 'Show' : 'Hide';
+  });
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    errorBox.textContent = '';
+
+    const email = emailInput.value.trim();
+    const password = passwordInput.value;
+
+    if (!email || !password) {
+      errorBox.textContent = 'Please enter your email and password.';
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Please wait…';
+
+    try {
+      const res = await fetch('/auth/' + (mode === 'login' ? 'login' : 'signup'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Something went wrong. Please try again.');
+      }
+
+      window.location.href = '/';   // login ho gaya, ab app kholo
+    } catch (err) {
+      errorBox.textContent = err.message;
+      submitBtn.disabled = false;
+      submitBtn.textContent = label();
+    }
+  });
+
+  setMode('login');
+</script>
+</body>
+</html>
